@@ -1,6 +1,6 @@
 # dock_detect
 
-Automatically manage your ThinkPad T14 Gen 2 display when docking at your home desk.
+Automatically manage your laptop display when docking at your home desk.
 
 ## What it does
 
@@ -18,7 +18,7 @@ Automatically manage your ThinkPad T14 Gen 2 display when docking at your home d
 
 ## Detection method
 
-Uses **EDID hashing** of your specific home monitor on DP-3 (via USB-C hub).
+Uses **EDID hashing** of your specific home monitor via a USB-C hub.
 
 You'll need to find your own monitor's EDID (see below).
 
@@ -67,7 +67,7 @@ dock_detect/
 │   ├── home_dock_event.sh  # Triggered by udev on hub plug/unplug
 │   └── lid_event.sh        # Triggered by acpid on lid close/open
 ├── udev/
-│   └── 99-home-dock.rules  # udev rule matching your Terminus hub
+│   └── 99-home-dock.rules  # udev rule matching your USB-C hub
 ```
 
 ## What setup.sh does
@@ -110,11 +110,11 @@ cat /proc/acpi/button/lid/*/state
 
 ### The internal display doesn't disable when I plug the hub
 
-1. Check if the udev rule is loaded:
+1. Check that the udev rule matches your hub's vendor and product IDs:
    ```bash
-   udevadm info -a -n /dev/bus/usb/003/006 | grep -i "idVendor\|idProduct"
+   udevadm info -a -n /dev/bus/usb/... | grep -i "idVendor\|idProduct"
    ```
-   Make sure it matches `1a40` and `0101`. If the device path changed, update the udev file.
+   Update `udev/99-home-dock.rules` if the IDs differ.
 
 2. Check if home desk detection works:
    ```bash
@@ -169,28 +169,11 @@ sudo sed -i 's/HandleLidSwitchDocked=ignore/HandleLidSwitchDocked=suspend/' /etc
 sudo systemctl restart systemd-logind
 ```
 
-## Unifying Receiver wake
-
-If you want to wake the laptop from standby using the Logitech mouse when docked:
-
-1. Make sure the Logitech Unifying Receiver is plugged into the USB switch (or directly into the hub)
-2. The receiver is already wake-enabled (`3-7` has `power/wakeup = enabled`)
-
-If you need to enable wake on another USB device:
-
-```bash
-# Find the device
-lsusb -t
-
-# Enable wake
-echo enabled | sudo tee /sys/bus/usb/devices/3-6.X/power/wakeup
-```
-
 ## How it works (summary)
 
-1. **udev** detects the Terminus Technology hub (`1a40:0101`) being plugged/unplugged
+1. **udev** detects your USB-C hub being plugged/unplugged
 2. **home_dock_event.sh** runs and calls **is_home_desk.sh** to verify the monitor EDID matches your home monitor
-3. If it's a match → disables internal display (`eDP-1`), enables external (`DP-3`)
+3. If it's a match → disables internal display, enables external monitor
 4. If HDMI is also connected → enables that too
 5. When unplugged → re-enables internal display
 6. **acpid** catches lid close → checks if at home → if yes, inhibits suspend and disables internal display
