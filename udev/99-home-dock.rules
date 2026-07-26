@@ -1,0 +1,2 @@
+ACTION=="add",    SUBSYSTEM=="usb", ATTRS{idVendor}=="1a40", ATTRS{idProduct}=="0101", RUN+="/usr/local/bin/home_dock_event.sh add"
+ACTION=="remove", SUBSYSTEM=="usb", ATTRS{idVendor}=="1a40", ATTRS{idProduct}=="0101", RUN+="/usr/local/bin/home_dock_event.sh remove"
